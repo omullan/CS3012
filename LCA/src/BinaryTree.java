@@ -33,9 +33,9 @@ public class BinaryTree {
 		Node left = findLCA(node.left, n, j);
 		Node right = findLCA(node.right, n, j);
 
-		if (left != null && right != null)
+		if (left != null && right != null) {
 			return node;
-
+		}
 		if (left != null) {
 			return left;
 		} else {
