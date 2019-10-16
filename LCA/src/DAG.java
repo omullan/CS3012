@@ -45,4 +45,38 @@ public class DAG {
 		DirectedDFS dfsObj = new DirectedDFS(this, x);
 		return dfsObj.visited(y);
 	}
+	
+	
+	private class DirectedDFS {
+		private boolean[] marked;
+		private boolean[] revMarked;
+		
+		public DirectedDFS(DAG G, int s) {
+			marked = new boolean[G.V()];
+			revMarked = new boolean[G.V()];
+			dfs(G, s);
+		}
+		
+		private void dfs(DAG G, int v) {
+			marked[v] = true;
+			for (int w : G.adj(v))
+			if (!marked[w]) dfs(G, w);
+		}
+		
+		private void reverseDfs(DAG G, int v){
+			revMarked[v] = true;
+			for (int w : G.reverseAdj(v))
+			if (!revMarked[w]) reverseDfs(G, w);
+		}
+		
+		public boolean visited(int v) { 
+			return marked[v]; 
+		}
+		
+		public boolean revVisited(int v){ 
+			return revMarked[v]; 
+		}
+	}
 }
+
+
