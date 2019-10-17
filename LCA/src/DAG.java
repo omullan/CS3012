@@ -1,169 +1,148 @@
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Queue;
 
 public class DAG {
-	private final int V;
-	private final ArrayList<Integer>[] adj;
-	private final ArrayList<Integer>[] reverseAdj;
-
+	private int V;			
+	private int E;	
+	private ArrayList<Integer>[] adjacent; 
+	private int [] indegree;	
+	private int [] outdegree;		
+	private boolean marked [];			
+	private boolean hasCycle;			
+	private boolean stack [];			
+	
+	
 	public DAG(int V) {
+		if(V < 0) {
+			throw new IllegalArgumentException("Vertices cannot be less than zero");
+		}
+		
 		this.V = V;
-		adj = (ArrayList<Integer>[]) new ArrayList[V];
-		reverseAdj = (ArrayList<Integer>[]) new ArrayList[V];
-
-		for (int v = 0; v < V; v++) {
-			adj[v] = new ArrayList<Integer>();
-			reverseAdj[v] = new ArrayList<Integer>();
+		this.E = 0;
+		indegree = new int[V];
+		marked = new boolean[V];
+		stack = new boolean[V];
+		adjacent = (ArrayList<Integer>[]) new ArrayList[V];
+		
+		for(int v = 0; v < V; v++) {
+			adjacent[v] = new ArrayList<Integer>();
 		}
 	}
 
 	public boolean addEdge(int v, int w) {
-		if (v >= this.V || w >= this.V || v < 0 || w < 0) {
-			return false;
-		}
-		if (v != w && !hasPath(w, v) && !adj[v].contains(w)) {
-			adj[v].add(w);
-			reverseAdj[w].add(v);
+		if((validateVertex(v) == true) && (validateVertex(w) == true)) {
+			adjacent[v].add(w);
+			indegree[w]++;
+			E++;
 			return true;
-		} else {
-			return false;
 		}
-	}
-
-	public int V() {
-		return V;
-	}
-
-	public ArrayList<Integer> adj(int v) {
-		return adj[v];
-	}
-
-	public ArrayList<Integer> reverseAdj(int v) {
-		return reverseAdj[v];
-	}
-
-	public boolean hasPath(int x, int y) {
-		DirectedDFS dfsObj = new DirectedDFS(this, x);
-		return dfsObj.visited(y);
+		else {
+			return false;
+		}		
 	}
 	
-	public ArrayList<Integer> lowestCommonAncestor(int x, int y)
-	{	
-		ArrayList<Integer> LCA = new ArrayList<Integer>();
-		int currentMax = Integer.MAX_VALUE;
+	public boolean validateVertex(int v) {
+		if(v < 0 ) {
+			return false;
+		} else if(v >= V) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+	
+	public Iterable<Integer> adjacent(int v) {
+		return adjacent[v];
+	}
+	
+	public void findCycle(int v) {
+		marked[v] = true;
+		stack[v] = true;
 		
-		if (x==y) { 
-			return LCA;
-		} else if (x >= this.V) {
-			return LCA;
-		} else if (y >= this.V) {
-			return LCA; 
-		} else if (x < 0) {
-			return LCA;
-		} else if ( y < 0) {
-			return LCA;
+		for(int w : adjacent(v)) {
+			if(!marked[w]){
+				findCycle(w);
+			}
+			else if(stack[w]) {
+				hasCycle = true;
+				return;
+			}
+		}
+		stack[v] = false;
+	}
+
+	public int findLCA(int v, int w) {
+		findCycle(0);
+		
+		if(hasCycle) {
+			return -1;
+		} else if(validateVertex(v) == false || validateVertex(w) == false)	{
+
+			return -1;
+		} else if(E == 0) {
+			return -1;
 		}
 		
-		DirectedDFS depthFirstSearch = new DirectedDFS(this, x);
-		depthFirstSearch.reverseDfs(this, x);
-		int distanceX, distanceY;
+		DAG reverse = reverse();
 		
-		for(int v = 0; v < this.V; v++) {
-			if(depthFirstSearch.reverseVisited(v) && hasPath(v, y)) {
-				distanceX = getDistance(v, x);
-				distanceY = getDistance(v, y);
-				
-				if(Integer.max(distanceX, distanceY) < currentMax) {		
-					LCA = new ArrayList<Integer>();
-					LCA.add(v);
-					currentMax = Integer.max(distanceX, distanceY);
-				} else if(Integer.max(distanceX, distanceY) == currentMax) {
-					LCA.add(v);
-					currentMax = Integer.max(distanceX, distanceY);
+		ArrayList<Integer> a1 = reverse.BFS(v);
+		ArrayList<Integer> a2 = reverse.BFS(w);
+		ArrayList<Integer> commonAnc = new ArrayList<Integer>();
+		
+		boolean found = false;
+		
+		for(int i = 0; i < a1.size(); i++) {
+			for(int j = 0; j < a2.size(); j++)	{
+				if(a1.get(i) == a2.get(j)) {
+					commonAnc.add(a1.get(i));
+					found = true;
 				}
 			}
 		}
-		return LCA;
+		
+		if(found) {
+			return commonAnc.get(0);
+		}
+		else {
+			return -1; 
+		}
 	}
 
-	private int getDistance(int x, int target) {
-	    
-			if(x == target) { 
-				return 0; 
-			} else {
-		        Queue<Integer> queue = new LinkedList<Integer>();
-		        int[] distance = new int[this.V];
-		        boolean[] marked = new boolean[this.V];
-		        
-		        for (int v = 0; v < this.V(); v++){   
-		        	distance[v] = Integer.MAX_VALUE;
-		        }
-		        
-		        distance[x] = 0;
-		        marked[x] = true;
-		        queue.add(x);
-		        
-		        while (!queue.isEmpty()) {
-		            int v = queue.remove();
-		            for (int w : this.adj(v)) {
-		                if (!marked[w]) {
-		                	distance[w] = distance[v] + 1;
-		                    marked[w] = true;
-		                    queue.add(w);
-		                }
-		            }
-		        }
-		        return distance[target];
-			}
-	}
-	
-	
-	private class DirectedDFS {
-		private boolean[] marked;
-		private boolean[] reverseMarked;
+	public ArrayList<Integer> BFS(int s) {
+		ArrayList<Integer> order = new ArrayList<Integer>();
+		boolean visited[] = new boolean[V]; 
+		LinkedList<Integer> queue = new LinkedList<Integer>();
 		
-		public DirectedDFS(DAG G, int s) {
-			marked = new boolean[G.V()];
-			reverseMarked = new boolean[G.V()];
-			dfs(G, s);
-		}
+		visited[s] = true;
+		queue.add(s);
 		
-		private void dfs(DAG G, int v) {
-			marked[v] = true;
-			for (int w : G.adj(v))
-			if (!marked[w]) dfs(G, w);
-		}
-		
-		private void reverseDfs(DAG G, int v){
-			reverseMarked[v] = true;
-			for (int w : G.reverseAdj(v))
-			if (!reverseMarked[w]) {
-				reverseDfs(G, w);
+		while(queue.size() != 0) {
+			s = queue.poll();
+			order.add(s);
+			Iterator<Integer> iter = adjacent[s].listIterator();
+			
+			while(iter.hasNext()) {
+				int n = iter.next();
+				if(!visited[n]) {
+					visited[n] = true;
+					queue.add(n);
+				}
 			}
 		}
-		
-		public boolean visited(int v) { 
-			return marked[v]; 
-		}
-		
-		public boolean reverseVisited(int v){ 
-			return reverseMarked[v]; 
-		}
+		return order;
 	}
 	
-	public static void main(String args[]) {
-		DAG dag = new DAG(5);
-		boolean x = dag.addEdge(1, 2);
-		x = dag.addEdge(1, 4);
-		x = dag.addEdge(2, 3);
-		x = dag.addEdge(4, 5);
-		ArrayList<Integer> result = dag.lowestCommonAncestor(3,5);
-		System.out.print(result.size());
-		for(int i = 0; i < result.size(); i++) {
-			System.out.print(result.get(i));
+	public DAG reverse() {
+		DAG reverse = new DAG(V);
+		for(int v = 0; v < V; v++) {
+			for(int w : adjacent(v)) {
+				reverse.addEdge(w, v);
+			}		
 		}
+		return reverse;
 	}
+	
 }
 
 

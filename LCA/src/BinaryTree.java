@@ -52,6 +52,7 @@ public class BinaryTree {
 			root = new Node(key);
 			return root;
 		}
+		if(key < 0 ) {}
 
 		if (key < root.data) {
 			root.left = insert(root.left, key);
