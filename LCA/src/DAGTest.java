@@ -22,6 +22,8 @@ class DAGTest {
 		assertEquals(true, result);
 		result = dag.addEdge(9, 3);
 		assertEquals(false, result);
+		result = dag.addEdge(3, 9);
+		assertEquals(false, result);
 	}
 	
 	@Test()
@@ -43,6 +45,20 @@ class DAGTest {
 		assertEquals(1, result);
 		result = dag.findLCA(34, -10);
 		assertEquals(-1, result);
+		result = dag.findLCA(10, 0);
+		assertEquals(-1, result);
+		result = dag.findLCA(0, 10);
+		assertEquals(-1, result);
+	}
+	
+	@Test
+	void testRareCases() {
+		DAG dag = new DAG(5);
+		boolean e = dag.addEdge(0, 1);
+		e = dag.addEdge(1, 2);
+		e = dag.addEdge(2, 3);
+		int result = dag.findLCA(3, 3);
+		assertEquals(3, result);
 	}
 	
 	@Test
@@ -80,10 +96,6 @@ class DAGTest {
 		Iterable<Integer> result = dag.adjacent(0);
 		assertEquals("[1, 2, 3]", result.toString());
 	}
-	
-	@Test
-	void testReverse() {
-		
-	}
+
 
 }
